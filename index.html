@@ -15,10 +15,11 @@
 @media(max-width:560px){header{height:auto;min-height:76px;gap:12px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}.actions{flex-wrap:wrap}.actions button{font-size:11px}}
 #trackingStatus{grid-column:1/-1;display:block;margin-bottom:18px;min-height:36px}
 #paper #cursor.erasing{border:2px dashed #bc633f!important;background:#f4ba8b26;box-shadow:0 0 0 1px #fff8}
+header{height:auto;min-height:96px;gap:16px;padding-top:14px;padding-bottom:14px}.actions{flex-wrap:wrap;justify-content:flex-end}#language{font-weight:600;min-width:44px;border-color:var(--green)}html[lang=en] h1{font-size:clamp(32px,3.2vw,44px);letter-spacing:0;line-height:1.15}html[lang=en] .brand{letter-spacing:1px;white-space:nowrap}html[lang=en] .eyebrow{letter-spacing:1px;line-height:1.6}html[lang=en] .gestures b{width:auto;min-width:30px;margin-right:6px}html[lang=en] .canvas-label,html[lang=en] footer{gap:12px;letter-spacing:1px;line-height:1.5}@media(max-width:800px){header{min-height:76px}html[lang=en] .brand{font-size:22px}html[lang=en] .canvas-label,html[lang=en] footer{flex-wrap:wrap}html[lang=en] h1 br{display:block}}
 </style>
 </head>
 <body>
-  <header><a class="brand" href="./index.html">流漆<span>AIR PAINT STUDIO</span></a><div class="actions"><button id="reference">参考心形</button><button id="demo">试试看</button><button id="undo">撤销</button><button id="clear">清空</button><button id="export">导出 PNG</button></div></header>
+  <header><a class="brand" href="./index.html">流漆<span>AIR PAINT STUDIO</span></a><div class="actions"><button id="language" type="button" aria-label="Switch to English">EN</button><button id="reference">参考心形</button><button id="demo">试试看</button><button id="undo">撤销</button><button id="clear">清空</button><button id="export">导出 PNG</button></div></header>
   <main><aside><span class="eyebrow">用手指，让颜色流动</span><h1>把空气<br>变成画布。</h1><p class="intro">手指蘸一点颜色。<br>在空气里涂个开心。</p>
   <div class="palette" id="palette"></div><label class="custom">自选颜色<input id="color" type="color" value="#168c72"></label>
   <div class="paint-controls">
@@ -38,6 +39,117 @@
   </aside><section class="studio"><div class="canvas-label"><span>01 / 自由画布</span><span id="gesture">鼠标模式</span></div><div id="paper"><canvas id="paint" aria-label="油漆绘画画布"></canvas><div id="cursor"></div><div id="hint">在这里，写下第一笔<span>按住拖动，或开启摄像头</span></div></div><footer><span>湿漆 / 重力 / 自然留痕</span><span>MADE WITH MOVEMENT</span></footer><div class="preview" hidden><video id="video" autoplay muted playsinline></video><span>镜像摄像头 · 本地识别</span></div></section></main>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script><script>"use strict";
 (()=>{
+const translations={
+  '流漆 · 空中绘画':'Air Paint · Paint in the Air',
+  '流漆 · 油漆分享版':'Air Paint · Paint Edition',
+  '流漆':'Air Paint',
+  '参考心形':'Sample Heart','试试看':'Try It','撤销':'Undo','清空':'Clear','导出 PNG':'Export PNG',
+  '用手指，让颜色流动':'LET COLOR FLOW FROM YOUR FINGERTIPS',
+  '把空气':'Turn the Air','变成画布。':'Into Your Canvas.',
+  '手指蘸一点颜色。':'Dip your finger in a little color.',
+  '在空气里涂个开心。':'Paint a little joy in the air.',
+  '自选颜色':'Custom Color','绘画模式':'Painting Mode','流体油漆':'Flowing Paint','雾气玻璃':'Foggy Glass',
+  '雾气浓度':'Fog Density','水珠粗细':'Water Trail Thickness','水珠滴流长度':'Water Trail Length','水珠数量':'Water Trail Amount',
+  '加水量':'Water Amount','流动性':'Fluidity',
+  '水越多，颜料浓度越低、颜色越淡；水越少，颜色越浓。流动性单独控制下流速度，调整作用于下一笔。':'More water makes paint lighter; less water makes it richer. Fluidity controls flow speed. Changes apply to your next stroke.',
+  '绘画背景':'Background','摄像头实景 / 无摄像头时墙面':'Camera Scene / Wall When Camera Is Off','粗糙墙面':'Textured Wall',
+  '画笔粗细':'Brush Size','滴流长度':'Drip Length','滴流粗细':'Drip Thickness','手部防抖':'Hand Smoothing','橡皮大小':'Eraser Size','擦玻璃范围':'Glass Wipe Size',
+  '开启摄像头 · AR 画画':'Enable Camera · Air Paint','关闭摄像头':'Turn Off Camera',
+  '开启后直接在摄像头场景上绘画，也可用鼠标试画':'Paint over your camera scene, or try drawing with a mouse or touch.',
+  '无需校准：食指写字，五指张开抬笔，握拳擦除。':'No calibration: draw with your index finger, open your palm to lift, and make a fist to erase.',
+  '食指写字，五指张开抬笔，握拳擦除。':'Index finger to draw, open palm to lift, fist to erase.',
+  '食指擦开雾气，五指张开抬笔，握拳大面积擦玻璃。':'Index finger to wipe, open palm to lift, fist to wipe a wide area.',
+  '手势指南':'Gesture Guide','食指朝镜头伸出，写字':'Point your index finger toward the camera to draw',
+  '食指向上，其余手指收起，写字':'Point your index finger up, with other fingers curled, to draw',
+  '五指张开，移动不留痕':'Open all five fingers to move without drawing',
+  '油漆模式擦除，玻璃模式大面积擦开雾气':'Erase paint, or wipe a wide area of foggy glass',
+  '握拳并移动，掌心作为橡皮':'Make a fist and move to erase around your palm',
+  '手离开镜头自动停笔。握拳操作支持撤销。':'Move your hand out of view to stop. Fist actions can be undone.',
+  '保持整只手入镜，光线充足。':'Keep your whole hand visible in good lighting.',
+  '抬笔':'Lift','握拳':'Fist',
+  '01 / 自由画布':'01 / FREE CANVAS','鼠标模式':'Mouse / Touch Mode','油漆绘画画布':'Paint Canvas',
+  '在这里，写下第一笔':'Make Your First Mark','按住拖动，或开启摄像头':'Drag to draw, or enable your camera',
+  '湿漆 / 重力 / 自然留痕':'WET PAINT / GRAVITY / NATURAL MARKS','镜像摄像头 · 本地识别':'MIRRORED CAMERA · LOCAL TRACKING',
+  'AR 实景 · 镜像画面':'LIVE SCENE · MIRRORED CAMERA','雾气玻璃 · 手指擦写':'FOGGY GLASS · FINGER WIPE','粗糙墙面 · 手势绘画':'TEXTURED WALL · GESTURE PAINTING',
+  '重新起雾':'Reset Fog','手部识别中断：':'Hand tracking interrupted: ',
+  '没有追踪到手，请保持整只手入镜。':'No hand detected. Keep your whole hand in view.',
+  '请将手放入镜头':'Bring Your Hand Into View','手已追踪 · ':'Hand detected · ',
+  '保持笔迹 · 等待手势恢复':'Stroke Paused · Waiting for Gesture',
+  '握拳 · 正在擦玻璃':'Fist · Wiping Glass','握拳 · 正在擦除':'Fist · Erasing',
+  ' · 正在画画':' · Drawing','已抬笔 · 伸直食指开始':'Brush Lifted · Extend Your Index Finger',
+  '摄像头已关闭，可以使用鼠标绘画':'Camera is off. Draw with your mouse or touchscreen.',
+  '正在加载手部识别并申请摄像头权限…':'Loading hand tracking and requesting camera access…',
+  '识别组件未加载，请联网后刷新':'Hand tracking did not load. Check your connection and refresh.',
+  '视频只在本机处理。':'Video is processed only on your device.',
+  '摄像头权限被拒绝，请在浏览器设置中允许访问。':'Camera access was denied. Allow it in your browser settings.',
+  '未找到摄像头，请连接摄像头后重试。':'No camera found. Connect a camera and try again.',
+  '无法启动：':'Unable to start: ',
+  '握拳擦除':'Fist detected','短暂识别波动，暂不落墨':'Tracking uncertain; drawing paused',
+  '确认食指姿势':'Index finger confirmed','张开手掌抬笔':'Open palm; brush lifted','正在确认握拳':'Confirming fist','已抬笔':'Brush lifted'
+};
+const pattern=new RegExp(Object.keys(translations).sort((a,b)=>b.length-a.length).map(key=>key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
+
+function translateText(source,language){
+  return language==='en'?source.replace(pattern,key=>translations[key]):source;
+}
+
+function initLanguage(doc=document,storage){
+  const bindings=new Map(),attributes=new Map();
+  let language='zh';
+  try{storage??=globalThis.localStorage;if(storage?.getItem('air-paint-language')==='en')language='en';}catch{}
+  const button=doc.getElementById('language');
+  function text(node){
+    const prior=bindings.get(node);
+    const source=prior&&node.data===prior.rendered?prior.source:node.data;
+    if(!/[\u3400-\u9fff]/.test(source))return;
+    const rendered=translateText(source,language);
+    bindings.set(node,{source,rendered});
+    if(node.data!==rendered)node.data=rendered;
+  }
+  function visit(node,remove=false){
+    if(node.nodeType===3){if(remove)bindings.delete(node);else text(node);return;}
+    if(['SCRIPT','STYLE','OUTPUT'].includes(node.tagName))return;
+    if(remove)attributes.delete(node);
+    else if(node.getAttribute){
+      for(const name of ['aria-label','title']){
+        const source=node.getAttribute(name);
+        if(source&&/[\u3400-\u9fff]/.test(source)){
+          let labels=attributes.get(node);if(!labels){labels=new Map();attributes.set(node,labels);}
+          if(!labels.has(name))labels.set(name,source);
+        }
+      }
+    }
+    for(const child of node.childNodes||[])visit(child,remove);
+  }
+  function controls(){
+    doc.documentElement.lang=language==='en'?'en':'zh-CN';
+    for(const [element,labels] of attributes)for(const [name,source] of labels)element.setAttribute(name,translateText(source,language));
+    button.textContent=language==='en'?'中文':'EN';
+    button.setAttribute('aria-label',language==='en'?'Switch to Chinese':'Switch to English');
+    button.setAttribute('title',language==='en'?'切换到中文':'Switch to English');
+  }
+  // Observe text changes only: camera frames and cursor styles never trigger translation.
+  const observer=new MutationObserver(records=>{
+    observer.disconnect();
+    for(const record of records){
+      if(record.type==='characterData')text(record.target);
+      else{for(const node of record.removedNodes)visit(node,true);for(const node of record.addedNodes)visit(node);}
+    }
+    observe();
+  });
+  function observe(){observer.observe(doc.documentElement,{subtree:true,childList:true,characterData:true});}
+  function setLanguage(next){
+    observer.disconnect();language=next==='en'?'en':'zh';
+    visit(doc.documentElement);
+    controls();
+    try{storage?.setItem('air-paint-language',language);}catch{}
+    observe();
+  }
+  button.addEventListener('click',()=>setLanguage(language==='en'?'zh':'en'));
+  setLanguage(language);
+  return {setLanguage,getLanguage:()=>language};
+}
+
 function paintMaterial(water,pigment,mobility){
   return {water,pigment,mobility,duration:(1.2+4.5*(1-mobility))/(.85+water*.8),freshAlpha:Math.min(.99,.55+pigment*.44),washStrength:(.45+pigment*1.1)*(1-water*.72),grain:.3+water*.6};
 }
@@ -591,6 +703,7 @@ function results(result){if(!running)return;const lm=result.multiHandLandmarks?.
 $('camera').onclick=async()=>{if(running){stopCamera();$('status').textContent='摄像头已关闭，可以使用鼠标绘画';return;}$('camera').disabled=true;$('status').textContent='正在加载手部识别并申请摄像头权限…';try{if(!window.Hands)throw new Error('识别组件未加载，请联网后刷新');if(!camera){camera=new window.Hands({locateFile:file=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+file});camera.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.65,minTrackingConfidence:.65});camera.onResults(results);}stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'},audio:false});$('video').srcObject=stream;await $('video').play();running=true;lastVideoTime=-1;resetHandPen();setScene(true);$('camera').textContent='关闭摄像头';$('status').textContent=('食指写字，五指张开抬笔，握拳擦除。')+'视频只在本机处理。';}catch(e){stopCamera();$('status').textContent=e.name==='NotAllowedError'?'摄像头权限被拒绝，请在浏览器设置中允许访问。':e.name==='NotFoundError'?'未找到摄像头，请连接摄像头后重试。':'无法启动：'+e.message;}finally{$('camera').disabled=false;}};
 window.addEventListener('pagehide',stopCamera);
 sceneVideo.addEventListener('playing',()=>{setScene(true);$('status').textContent='食指写字，五指张开抬笔，握拳擦除。';});
+initLanguage();
 
 })();</script>
 </body></html>

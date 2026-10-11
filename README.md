@@ -1,5 +1,7 @@
 # Air Paint
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Dip your finger in a little color. Paint a little joy in the air.
 
 An interactive air-painting web app with camera-based hand tracking, flowing paint, and drip effects. Create with hand gestures, a mouse, or touch.
@@ -21,7 +23,7 @@ An interactive air-painting web app with camera-based hand tracking, flowing pai
 3. Keep your whole hand visible, with good lighting, when using gesture controls.
 4. Export your artwork before refreshing or closing the page.
 
-The current interface is in Chinese. The main controls are:
+Use the **EN / 中文** button in the header to switch the interface language. Your choice is remembered when browser storage is available. Switching languages does not clear your artwork or change your settings. The main controls are:
 
 | Control | Meaning |
 | --- | --- |
